@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+
+# Logi
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Systemowe
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+
+# VSCode
+.vscode/
+
+# Build (jeśli np. będziesz generować jakieś pliki)
+dist/
+build/

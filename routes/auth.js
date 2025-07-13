@@ -1,8 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const crypto = require("crypto");
 const db = require("../db");
-const transporter = require("../utils/mailer");
+const createTransporter = require("../utils/mailer");
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
@@ -17,7 +16,7 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const code = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = Date.now() + 3 * 60 * 1000;
+    const expiresAt = Date.now() + 3 * 60 * 1000; // 3 minuty
 
     const stmt = db.prepare(
       "INSERT INTO pending_users (email, password, username, code, expires_at) VALUES (?, ?, ?, ?, ?)"
@@ -31,8 +30,12 @@ router.post("/register", async (req, res) => {
       textContent = `Cześć!\n\nTwój kod weryfikacyjny to: ${code}\n\nJest ważny przez 3 minuty.`;
     }
 
-    await transporter.sendMail({
-      from: `"Shelfyz Bot" <${process.env.EMAIL_USER}>`,
+    // Tworzymy transporter Ethereal
+    const transporter = await createTransporter();
+
+    // Wysyłamy mail
+    const info = await transporter.sendMail({
+      from: '"Shelfyz Bot" <no-reply@shelfyz.com>',
       to: email,
       subject:
         lang === "en"
@@ -42,11 +45,13 @@ router.post("/register", async (req, res) => {
       html: `<p>${textContent.replace(/\n/g, "<br>")}</p>`,
     });
 
+    console.log("Preview URL:", require("nodemailer").getTestMessageUrl(info));
+
     res.json({
       message:
         lang === "en"
-          ? "Verification email sent!"
-          : "Wysłano email weryfikacyjny!",
+          ? "Verification email sent! Check Preview URL in logs!"
+          : "Wysłano email weryfikacyjny! Sprawdź link Preview URL w logach!",
     });
   } catch (err) {
     console.error(err);

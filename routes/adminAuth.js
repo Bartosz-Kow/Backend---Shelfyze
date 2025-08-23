@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const db = require("../db");
 const router = express.Router();
 
-router.post("/auth/admin", async (req, res) => {
+router.post("/admin", async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {

@@ -6,7 +6,7 @@ const db = require("../db");
 const email = "admin@shelfyz.com";
 const username = "Admin";
 const password = process.env.ADMIN_PASSWORD;
-
+console.log("🧪 ADMIN_PASSWORD:", password);
 (async () => {
   if (!password) {
     console.error("❌ Brakuje ADMIN_PASSWORD w pliku .env!");

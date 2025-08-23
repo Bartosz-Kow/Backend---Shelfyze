@@ -7,7 +7,11 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Serwer działa 🚀");
 });
+
 const db = require("./db/index");
+
+const authMiddleware = require("./middleware/auth");
+app.use(authMiddleware);
 
 const registerRoutes = require("./routes/auth");
 const loginRoutes = require("./routes/login");

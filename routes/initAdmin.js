@@ -1,30 +1,43 @@
 require("dotenv").config();
-
 const bcrypt = require("bcrypt");
 const db = require("../db");
+async function initAdmin() {
+  const email = "admin@shelfyz.com";
+  const username = "Admin";
+  const password = process.env.ADMIN_PASSWORD;
 
-const email = "admin@shelfyz.com";
-const username = "Admin";
-const password = process.env.ADMIN_PASSWORD;
-console.log("🧪 ADMIN_PASSWORD:", password);
-(async () => {
+  console.log("🧪 ADMIN_PASSWORD:", password ? "(ustawione)" : "(brak)");
+
   if (!password) {
-    console.error("❌ Brakuje ADMIN_PASSWORD w pliku .env!");
-    process.exit(1);
+    const msg = "❌ Brakuje ADMIN_PASSWORD w .env / zmiennych środowiskowych!";
+    console.error(msg);
+
+    throw new Error(msg);
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  const exists = db.prepare("SELECT * FROM admins WHERE email = ?").get(email);
+  const exists = db.prepare("SELECT 1 FROM admins WHERE email = ?").get(email);
 
   if (!exists) {
     db.prepare(
       "INSERT INTO admins (username, email, password) VALUES (?, ?, ?)"
     ).run(username, email, hashedPassword);
-    console.log("✅ Admin dodany");
+    console.log("✅ Admin dodany:", { email, username });
   } else {
-    console.log("⚠️ Admin już istnieje");
+    console.log("⚠️ Admin już istnieje:", { email });
   }
+}
 
-  process.exit();
-})();
+module.exports = initAdmin;
+
+if (require.main === module) {
+  initAdmin()
+    .then(() => {
+      console.log("🏁 Seed zakończony.");
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("Seed nie powiódł się:", err.message);
+      process.exit(1);
+    });
+}

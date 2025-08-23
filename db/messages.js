@@ -8,6 +8,8 @@ module.exports = (db) => {
       receiver_admin_id INTEGER,
       content TEXT NOT NULL,
       sent_at INTEGER NOT NULL,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      read_at INTEGER,
       FOREIGN KEY (sender_user_id) REFERENCES users(userId),
       FOREIGN KEY (receiver_user_id) REFERENCES users(userId),
       FOREIGN KEY (sender_admin_id) REFERENCES admins(adminId),

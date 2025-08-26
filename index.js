@@ -36,6 +36,10 @@ app.use("/auth", adminAuthRoutes);
 const { buildMessengerRouter } = require("./routes/messages");
 app.use("/messenger", buildMessengerRouter(db));
 
+// 🔑 Books routes
+const { buildBooksRouter } = require("./routes/books");
+app.use("/books", buildBooksRouter(db));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Serwer działa na porcie ${PORT}`);

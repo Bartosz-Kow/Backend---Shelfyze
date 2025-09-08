@@ -66,6 +66,15 @@ router.post("/verify", (req, res) => {
     return res.status(400).json({ error: "Email i kod są wymagane!" });
   }
 
+  const existingUser = db
+    .prepare("SELECT * FROM users WHERE email = ?")
+    .get(email);
+  if (existingUser) {
+    return res
+      .status(400)
+      .json({ error: "Konto z tym adresem email już istnieje." });
+  }
+
   const stmt = db.prepare(
     "SELECT * FROM pending_users WHERE email = ? AND code = ?"
   );
@@ -76,18 +85,33 @@ router.post("/verify", (req, res) => {
   }
 
   if (pendingUser.expires_at < Date.now()) {
+    db.prepare("DELETE FROM pending_users WHERE id = ?").run(pendingUser.id);
     return res.status(400).json({ error: "Kod wygasł." });
   }
 
-  const insertStmt = db.prepare(
-    "INSERT INTO users (username, email, password) VALUES (?, ?, ?)"
+  const info = db
+    .prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)")
+    .run(pendingUser.username, pendingUser.email, pendingUser.password);
+
+  const user = db
+    .prepare("SELECT userId, username, email FROM users WHERE userId = ?")
+    .get(info.lastInsertRowid);
+
+  db.prepare("DELETE FROM pending_users WHERE id = ?").run(pendingUser.id);
+
+  const token = jwt.sign(
+    { userId: user.userId, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
   );
-  insertStmt.run(pendingUser.username, pendingUser.email, pendingUser.password);
 
-  const deleteStmt = db.prepare("DELETE FROM pending_users WHERE id = ?");
-  deleteStmt.run(pendingUser.id);
-
-  res.json({ message: "Konto zostało zweryfikowane i utworzone!" });
+  res.json({
+    message: "Konto zostało zweryfikowane i utworzone!",
+    token,
+    userId: user.userId,
+    username: user.username,
+    email: user.email,
+  });
 });
 
 module.exports = router;

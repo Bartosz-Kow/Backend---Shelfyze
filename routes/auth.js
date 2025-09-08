@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const db = require("../db");
 const createTransporter = require("../utils/mailer");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
 
 router.post("/register", async (req, res) => {
   const { email, password, lang = "pl" } = req.body;

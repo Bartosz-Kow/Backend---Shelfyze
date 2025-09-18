@@ -40,6 +40,10 @@ app.use("/messenger", buildMessengerRouter(db));
 const { buildBooksRouter } = require("./routes/books");
 app.use("/books", buildBooksRouter(db));
 
+// 🔑 Users routes (zmiana nazwy / usunięcie konta)
+const { buildUsersRouter } = require("./routes/users");
+app.use("/users", buildUsersRouter(db));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Serwer działa na porcie ${PORT}`);

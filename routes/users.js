@@ -5,11 +5,11 @@ function buildUsersRouter(db) {
 
   // PATCH /users/username -> zmiana nazwy użytkownika
   router.patch("/username", (req, res) => {
-    if (!req.user || !req.user.userId) {
+    if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, error: "Unauthorized" });
     }
 
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { username } = req.body;
 
     if (!username || typeof username !== "string" || username.length < 3) {
@@ -39,11 +39,11 @@ function buildUsersRouter(db) {
 
   // DELETE /users -> usunięcie konta
   router.delete("/", (req, res) => {
-    if (!req.user || !req.user.userId) {
+    if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, error: "Unauthorized" });
     }
 
-    const { userId } = req.user;
+    const userId = req.user.id;
 
     try {
       const stmt = db.prepare("DELETE FROM users WHERE userId = ?");

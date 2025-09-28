@@ -37,6 +37,7 @@ function buildUsersRouter(db) {
     }
   });
 
+  // DELETE /users -> usuń konto i powiązane dane
   router.delete("/", (req, res) => {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, error: "Unauthorized" });
@@ -45,6 +46,11 @@ function buildUsersRouter(db) {
     const userId = req.user.id;
 
     try {
+      // Najpierw usuń powiązane dane, żeby nie blokowały FK
+      db.prepare("DELETE FROM book_answers WHERE user_id = ?").run(userId);
+      db.prepare("DELETE FROM books WHERE user_id = ?").run(userId);
+
+      // Na końcu usuń użytkownika
       const stmt = db.prepare("DELETE FROM users WHERE userId = ?");
       const result = stmt.run(userId);
 
@@ -54,7 +60,10 @@ function buildUsersRouter(db) {
           .json({ success: false, error: "User not found" });
       }
 
-      return res.json({ success: true, message: "Account deleted" });
+      return res.json({
+        success: true,
+        message: "Account and related data deleted",
+      });
     } catch (e) {
       console.error("❌ Error deleting user:", e);
       return res

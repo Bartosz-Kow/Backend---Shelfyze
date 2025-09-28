@@ -33,4 +33,18 @@ module.exports = (db) => {
       FOREIGN KEY (user_id) REFERENCES users(userId)
     )
   `);
+  db.exec(`
+CREATE TABLE IF NOT EXISTS book_progress (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  book_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  last_question_id INTEGER,
+  answered_count INTEGER DEFAULT 0,
+  updated_at INTEGER,
+  UNIQUE (book_id, user_id),
+  FOREIGN KEY (book_id) REFERENCES books(id),
+  FOREIGN KEY (user_id) REFERENCES users(userId),
+  FOREIGN KEY (last_question_id) REFERENCES book_questions(id)
+);
+  `);
 };

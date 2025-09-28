@@ -5,7 +5,12 @@ require("dotenv").config();
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("Serwer działa 🚀");
+  // Automatycznie generowany baseUrl na podstawie requestu
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  res.json({
+    message: "Serwer działa 🚀",
+    baseUrl,
+  });
 });
 
 const db = require("./db/index");

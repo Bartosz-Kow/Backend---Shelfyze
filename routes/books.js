@@ -92,33 +92,72 @@ function buildBooksRouter(db) {
 
     res.status(201).json({ bookId });
   });
+  // 📌 Zapis progresu użytkownika
   router.post("/:bookId/progress", (req, res) => {
+    console.log("📥 PROGRESS request", {
+      params: req.params,
+      body: req.body,
+      user: req.user,
+    });
     if (!req.user || !req.user.id) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
     const bookId = Number(req.params.bookId);
-    const { lastQuestionId } = req.body;
+    const { lastQuestionId } = req.body || {}; // 👈 tu fallback na pusty obiekt
 
     if (!Number.isInteger(bookId) || !Number.isInteger(lastQuestionId)) {
       return res.status(400).json({ error: "invalid ids" });
     }
 
-    db.prepare(
-      `
-    INSERT INTO book_progress (book_id, user_id, last_question_id, answered_count, updated_at)
-    VALUES (?, ?, ?, 
-      (SELECT COUNT(*) FROM book_answers WHERE book_id = ? AND user_id = ?),
-      ?
-    )
-    ON CONFLICT(book_id, user_id)
-    DO UPDATE SET last_question_id = excluded.last_question_id,
-                  answered_count = excluded.answered_count,
-                  updated_at = excluded.updated_at
-  `
-    ).run(bookId, req.user.id, lastQuestionId, bookId, req.user.id, Date.now());
+    try {
+      const existing = db
+        .prepare(
+          `SELECT id FROM book_progress WHERE book_id = ? AND user_id = ?`
+        )
+        .get(bookId, req.user.id);
 
-    res.json({ ok: true });
+      if (existing) {
+        db.prepare(
+          `
+        UPDATE book_progress
+        SET last_question_id = ?,
+            answered_count = (SELECT COUNT(*) FROM book_answers WHERE book_id = ? AND user_id = ?),
+            updated_at = ?
+        WHERE book_id = ? AND user_id = ?
+      `
+        ).run(
+          lastQuestionId,
+          bookId,
+          req.user.id,
+          Date.now(),
+          bookId,
+          req.user.id
+        );
+      } else {
+        db.prepare(
+          `
+        INSERT INTO book_progress (book_id, user_id, last_question_id, answered_count, updated_at)
+        VALUES (?, ?, ?, 
+          (SELECT COUNT(*) FROM book_answers WHERE book_id = ? AND user_id = ?),
+          ?
+        )
+      `
+        ).run(
+          bookId,
+          req.user.id,
+          lastQuestionId,
+          bookId,
+          req.user.id,
+          Date.now()
+        );
+      }
+
+      res.json({ ok: true });
+    } catch (e) {
+      console.error("❌ Error saving progress:", e);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   router.get("/:bookId/progress", (req, res) => {
@@ -188,6 +227,11 @@ function buildBooksRouter(db) {
 
   // ✍️ Odpowiedź na pytanie
   router.post("/:bookId/questions/:questionId/answer", (req, res) => {
+    console.log("📥 ANSWER request", {
+      params: req.params,
+      body: req.body,
+      user: req.user,
+    });
     if (!req.user || !req.user.id) {
       return res.status(403).json({ error: "Unauthorized" });
     }
@@ -219,18 +263,34 @@ function buildBooksRouter(db) {
     }
 
     try {
-      db.prepare("DELETE FROM book_answers WHERE book_id = ?").run(bookId);
-      db.prepare("DELETE FROM book_questions WHERE book_id = ?").run(bookId);
+      const trx = db.transaction(() => {
+        // usuń progres
+        db.prepare(
+          "DELETE FROM book_progress WHERE book_id = ? AND user_id = ?"
+        ).run(bookId, req.user.id);
 
-      const result = db
-        .prepare("DELETE FROM books WHERE id = ? AND user_id = ?")
-        .run(bookId, req.user.id);
+        // usuń odpowiedzi
+        db.prepare(
+          "DELETE FROM book_answers WHERE book_id = ? AND user_id = ?"
+        ).run(bookId, req.user.id);
 
+        // usuń pytania
+        db.prepare("DELETE FROM book_questions WHERE book_id = ?").run(bookId);
+
+        // usuń książkę
+        const result = db
+          .prepare("DELETE FROM books WHERE id = ? AND user_id = ?")
+          .run(bookId, req.user.id);
+
+        return result;
+      });
+
+      const result = trx();
       if (result.changes === 0) {
         return res.status(404).json({ error: "Book not found" });
       }
 
-      return res.json({ success: true, message: "Book deleted" });
+      return res.json({ success: true, message: "Book deleted with all data" });
     } catch (e) {
       console.error("❌ Error deleting book:", e);
       return res.status(500).json({ error: "Internal server error" });

@@ -6,10 +6,20 @@ async function createTransporter() {
   const transporter = nodemailer.createTransport({
     host: "smtp.ethereal.email",
     port: 587,
+    secure: false,
     auth: {
       user: testAccount.user,
       pass: testAccount.pass,
     },
+  });
+
+  // 🔍 Test połączenia
+  transporter.verify((err, success) => {
+    if (err) {
+      console.error("❌ SMTP verify error:", err);
+    } else {
+      console.log("✅ SMTP connection OK, transporter ready!");
+    }
   });
 
   return transporter;

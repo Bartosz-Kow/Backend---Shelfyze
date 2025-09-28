@@ -37,7 +37,6 @@ function buildUsersRouter(db) {
     }
   });
 
-  // DELETE /users -> usunięcie konta
   router.delete("/", (req, res) => {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, error: "Unauthorized" });

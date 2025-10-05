@@ -1,11 +1,19 @@
 const express = require("express");
+const cors = require("cors"); // ⬅️ dodajesz cors
 const app = express();
 require("dotenv").config();
 
 app.use(express.json());
 
+// ⬅️ konfiguracja CORS – musi być PRZED routes i middleware JWT
+app.use(
+  cors({
+    origin: "http://localhost:5173", // adres frontendu (dev na Vite)
+    credentials: true,
+  })
+);
+
 app.get("/", (req, res) => {
-  // Automatycznie generowany baseUrl na podstawie requestu
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   res.json({
     message: "Serwer działa 🚀",
@@ -45,7 +53,7 @@ app.use("/messenger", buildMessengerRouter(db));
 const { buildBooksRouter } = require("./routes/books");
 app.use("/books", buildBooksRouter(db));
 
-// 🔑 Users routes (zmiana nazwy / usunięcie konta)
+// 🔑 Users routes
 const { buildUsersRouter } = require("./routes/users");
 app.use("/users", buildUsersRouter(db));
 

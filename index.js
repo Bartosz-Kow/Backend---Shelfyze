@@ -61,3 +61,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Serwer działa na porcie ${PORT}`);
 });
+
+const { buildStatsOverviewRouter } = require("./routes/statsOverview");
+const { buildStatsChartsRouter } = require("./routes/statsCharts");
+app.use("/admin/stats", buildStatsOverviewRouter(db));
+app.use("/admin/stats", buildStatsChartsRouter(db));

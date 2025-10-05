@@ -1,8 +1,13 @@
+// routes/statsOverview.js
 const express = require("express");
 const router = express.Router();
 
+/**
+ * Dashboard Overview Stats
+ * Returns single-number metrics for admin dashboard (users, books, messages, etc.)
+ */
 module.exports.buildStatsOverviewRouter = (db) => {
-  router.get("/overview", async (req, res) => {
+  router.get("/overview", (req, res) => {
     try {
       const queries = {
         users: "SELECT COUNT(*) AS count FROM users",
@@ -16,17 +21,13 @@ module.exports.buildStatsOverviewRouter = (db) => {
 
       const results = {};
       for (const key in queries) {
-        const row = await new Promise((resolve, reject) => {
-          db.get(queries[key], (err, row) => {
-            if (err) reject(err);
-            else resolve(row);
-          });
-        });
-        results[key] = row.count;
+        const row = db.prepare(queries[key]).get(); // ✅ sync call
+        results[key] = row ? row.count : 0;
       }
 
       res.json(results);
     } catch (err) {
+      console.error("Stats overview error:", err);
       res.status(500).json({ error: err.message });
     }
   });

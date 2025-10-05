@@ -90,9 +90,19 @@ router.post("/verify", (req, res) => {
     return res.status(400).json({ error: "Kod wygasł." });
   }
 
+  // ⬇️ DODANE: zapisujemy created_at
+  const createdAt = Math.floor(Date.now() / 1000);
+
   const info = db
-    .prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)")
-    .run(pendingUser.username, pendingUser.email, pendingUser.password);
+    .prepare(
+      "INSERT INTO users (username, email, password, created_at) VALUES (?, ?, ?, ?)"
+    )
+    .run(
+      pendingUser.username,
+      pendingUser.email,
+      pendingUser.password,
+      createdAt
+    );
 
   const user = db
     .prepare("SELECT userId, username, email FROM users WHERE userId = ?")

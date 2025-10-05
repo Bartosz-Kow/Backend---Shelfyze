@@ -8,7 +8,7 @@ app.use(express.json());
 // ⬅️ konfiguracja CORS – musi być PRZED routes i middleware JWT
 app.use(
   cors({
-    origin: "http://localhost:5173", // adres frontendu (dev na Vite)
+    origin: true, // lub '*', jeśli nie używasz credentials
     credentials: true,
   })
 );
@@ -66,3 +66,6 @@ const { buildStatsOverviewRouter } = require("./routes/statsOverview");
 const { buildStatsChartsRouter } = require("./routes/statsCharts");
 app.use("/admin/stats", buildStatsOverviewRouter(db));
 app.use("/admin/stats", buildStatsChartsRouter(db));
+
+const statsRouter = require("./routes/stats")(db);
+app.use("/admin/stats", statsRouter);

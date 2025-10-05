@@ -99,17 +99,16 @@ function buildMessengerRouter(db) {
   `);
 
   const markReadUpTo = db.prepare(`
-    UPDATE messages
-       SET is_read = 1, read_at = @now
-     WHERE is_read = 0
-       AND (
-         (receiver_user_id = @meUser AND sender_admin_id = @partnerAdmin)
-         OR
-         (receiver_admin_id = @meAdmin AND sender_user_id = @partnerUser)
-       )
-       AND (sent_at <= @until)
-  `);
-
+  UPDATE messages
+     SET is_read = 1, read_at = :now
+   WHERE is_read = 0
+     AND (
+       (receiver_user_id = :meUser AND sender_admin_id = :partnerAdmin)
+       OR
+       (receiver_admin_id = :meAdmin AND sender_user_id = :partnerUser)
+     )
+     AND (sent_at <= :until)
+`);
   // --- routes ---
 
   // Send a message (user -> admin) or (admin -> user)
@@ -226,23 +225,23 @@ function buildMessengerRouter(db) {
 
     if (req.user.role === "user") {
       const info = markReadUpTo.run({
-        "@now": now,
-        "@meUser": req.user.id,
-        "@partnerAdmin": partnerId,
-        "@meAdmin": null,
-        "@partnerUser": null,
-        "@until": until,
+        now,
+        meUser: req.user.id,
+        partnerAdmin: partnerId,
+        meAdmin: null,
+        partnerUser: null,
+        until,
       });
       return res.json({ changed: info.changes });
     }
     if (req.user.role === "admin") {
       const info = markReadUpTo.run({
-        "@now": now,
-        "@meAdmin": req.user.id,
-        "@partnerUser": partnerId,
-        "@meUser": null,
-        "@partnerAdmin": null,
-        "@until": until,
+        now,
+        meAdmin: req.user.id,
+        partnerUser: partnerId,
+        meUser: null,
+        partnerAdmin: null,
+        until,
       });
       return res.json({ changed: info.changes });
     }

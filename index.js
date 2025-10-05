@@ -1,11 +1,19 @@
 const express = require("express");
+const cors = require("cors"); // ⬅️ dodajesz cors
 const app = express();
 require("dotenv").config();
 
 app.use(express.json());
 
+// ⬅️ konfiguracja CORS – musi być PRZED routes i middleware JWT
+app.use(
+  cors({
+    origin: true, // lub '*', jeśli nie używasz credentials
+    credentials: true,
+  })
+);
+
 app.get("/", (req, res) => {
-  // Automatycznie generowany baseUrl na podstawie requestu
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   res.json({
     message: "Serwer działa 🚀",
@@ -45,7 +53,7 @@ app.use("/messenger", buildMessengerRouter(db));
 const { buildBooksRouter } = require("./routes/books");
 app.use("/books", buildBooksRouter(db));
 
-// 🔑 Users routes (zmiana nazwy / usunięcie konta)
+// 🔑 Users routes
 const { buildUsersRouter } = require("./routes/users");
 app.use("/users", buildUsersRouter(db));
 
@@ -53,3 +61,11 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Serwer działa na porcie ${PORT}`);
 });
+
+const { buildStatsOverviewRouter } = require("./routes/statsOverview");
+const { buildStatsChartsRouter } = require("./routes/statsCharts");
+app.use("/admin/stats", buildStatsOverviewRouter(db));
+app.use("/admin/stats", buildStatsChartsRouter(db));
+
+const statsRouter = require("./routes/stats")(db);
+app.use("/admin/stats", statsRouter);

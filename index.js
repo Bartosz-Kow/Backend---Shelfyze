@@ -1,18 +1,21 @@
+// index.js
 const express = require("express");
-const cors = require("cors"); // ⬅️ dodajesz cors
+const cors = require("cors");
 const app = express();
 require("dotenv").config();
 
+// Middleware JSON
 app.use(express.json());
 
-// ⬅️ konfiguracja CORS – musi być PRZED routes i middleware JWT
+// ✅ Konfiguracja CORS – musi być PRZED routes i middleware JWT
 app.use(
   cors({
-    origin: true, // lub '*', jeśli nie używasz credentials
+    origin: true, // lub '*' jeśli nie używasz credentials
     credentials: true,
   })
 );
 
+// ✅ Testowy endpoint bazowy
 app.get("/", (req, res) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   res.json({
@@ -21,8 +24,10 @@ app.get("/", (req, res) => {
   });
 });
 
+// ✅ Inicjalizacja bazy danych
 const db = require("./db/index");
 
+// ✅ Tworzenie domyślnego admina
 const initAdmin = require("./routes/initAdmin");
 (async () => {
   try {
@@ -32,7 +37,17 @@ const initAdmin = require("./routes/initAdmin");
   }
 })();
 
-// 🔑 Middleware JWT
+// ✅ PUBLICZNE ROUTES (bez JWT)
+const reportRouter = require("./routes/report")(db);
+app.use("/admin", reportRouter);
+
+const buildPushRouter = require("./routes/push");
+app.use("/api", buildPushRouter(db));
+
+const pushRegisterRouter = require("./routes/pushRegister")(db);
+app.use("/api", pushRegisterRouter);
+
+// 🔑 Middleware JWT (chroni wszystko poniżej)
 const authMiddleware = require("./middleware/auth");
 app.use(authMiddleware);
 
@@ -57,11 +72,7 @@ app.use("/books", buildBooksRouter(db));
 const { buildUsersRouter } = require("./routes/users");
 app.use("/users", buildUsersRouter(db));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Serwer działa na porcie ${PORT}`);
-});
-
+// 🔑 Statystyki
 const { buildStatsOverviewRouter } = require("./routes/statsOverview");
 const { buildStatsChartsRouter } = require("./routes/statsCharts");
 app.use("/admin/stats", buildStatsOverviewRouter(db));
@@ -70,5 +81,8 @@ app.use("/admin/stats", buildStatsChartsRouter(db));
 const statsRouter = require("./routes/stats")(db);
 app.use("/admin/stats", statsRouter);
 
-const reportRouter = require("./routes/report")(db);
-app.use("/admin", reportRouter);
+// ✅ Uruchomienie serwera
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Serwer działa na porcie ${PORT}`);
+});

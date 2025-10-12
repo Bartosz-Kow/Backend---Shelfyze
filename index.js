@@ -69,3 +69,6 @@ app.use("/admin/stats", buildStatsChartsRouter(db));
 
 const statsRouter = require("./routes/stats")(db);
 app.use("/admin/stats", statsRouter);
+
+const reportRouter = require("./routes/report")(db);
+app.use("/admin", reportRouter);
